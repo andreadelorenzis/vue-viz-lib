@@ -1,0 +1,53 @@
+{
+  "name": "vue-viz-lib",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/vue-viz-lib.umd.cjs",
+  "module": "./dist/vue-viz-lib.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/vue-viz-lib.js",
+      "require": "./dist/vue-viz-lib.umd.cjs"
+    },
+    "./style.css": "./dist/vue-viz-lib.css"
+  },
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vue-tsc -p tsconfig.lib.json --emitDeclarationOnly",
+    "types": "vue-tsc ",
+    "preview": "vite preview",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "d3": "^7.9.0",
+    "vue": "^3.5.25"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^5.0.1",
+    "@storybook/addon-a11y": "^10.2.13",
+    "@storybook/addon-docs": "^10.2.13",
+    "@storybook/addon-onboarding": "^10.2.13",
+    "@storybook/addon-vitest": "^10.2.13",
+    "@storybook/vue3-vite": "^10.2.13",
+    "@types/node": "^25.3.3",
+    "@vitejs/plugin-vue": "^6.0.2",
+    "@vitest/browser-playwright": "^4.0.18",
+    "@vitest/coverage-v8": "^4.0.18",
+    "@vue/tsconfig": "^0.8.1",
+    "playwright": "^1.58.2",
+    "storybook": "^10.2.13",
+    "typescript": "~5.9.3",
+    "undici-types": "^7.22.0",
+    "vite": "^7.3.1",
+    "vite-plugin-dts": "^4.5.4",
+    "vitest": "^4.0.18",
+    "vue-tsc": "^3.1.5"
+  }
+}
