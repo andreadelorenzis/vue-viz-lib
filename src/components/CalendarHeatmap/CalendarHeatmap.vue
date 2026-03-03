@@ -8,9 +8,13 @@
 
 <style scoped>
 .container {
+  width: max-content;
+  max-width: 100%;
   border: 1px solid #ccc;
   border-radius: 10px;
   padding: 0 10px;
+  padding-bottom: 5px;
+  box-sizing: border-box;
 }
 .svg-container {
   overflow-x: auto;
