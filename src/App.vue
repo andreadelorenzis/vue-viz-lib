@@ -64,9 +64,20 @@ const heatmapCalendarData = generateYearData();
 </script>
 
 <template>
-  <BarChart :data="chartData" />
-  <LineChart :data="lineChartData" />
-  <BurndownChart :data="burndownData" :idealData="idealBurndownData" />
-  <Heatmap :data="heatmapData" />
-  <CalendarHeatmap :data="heatmapCalendarData" />
+  <div class="app-container">
+    <BarChart :data="chartData" />
+    <LineChart :data="lineChartData" />
+    <BurndownChart :data="burndownData" :idealData="idealBurndownData" />
+    <Heatmap :data="heatmapData" />
+    <CalendarHeatmap :data="heatmapCalendarData" />
+  </div>
 </template>
+
+<style scoped>
+.app-container {
+  width: 100%; /* full width of parent/viewport */
+  max-width: 100vw; /* prevent horizontal overflow */
+  padding: 2rem;
+  box-sizing: border-box;
+}
+</style>

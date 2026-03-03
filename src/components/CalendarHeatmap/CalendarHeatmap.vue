@@ -1,64 +1,101 @@
 <template>
-  <svg ref="svg"></svg>
+  <div class="container">
+    <div class="svg-container">
+      <svg ref="svg"></svg>
+    </div>
+  </div>
 </template>
 
-<script setup>
-import { computed, onMounted, ref, watch } from "vue";
+<style scoped>
+.container {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 0 10px;
+}
+.svg-container {
+  overflow-x: auto;
+  width: 100%;
+}
+svg {
+  display: block;
+}
+</style>
+
+<script setup lang="ts">
+import { onMounted, ref, watch } from "vue";
 import * as d3 from "d3";
 
-const props = defineProps({
-  data: {
-    type: Array,
-    required: true,
-  },
-  cellSize: {
-    type: Number,
-    default: 15,
-  },
+interface RawDataPoint {
+  date: string;
+  value: number;
+}
+
+interface ProcessedDataPoint {
+  date: Date;
+  value: number;
+  week?: number;
+  day?: number;
+}
+
+interface Props {
+  data: RawDataPoint[];
+  cellSize?: number;
+}
+
+const props = withDefaults(defineProps<Props>(), {
+  cellSize: 15,
 });
 
-const svg = ref(null);
+const svg = ref<SVGSVGElement | null>(null);
 
 const drawChart = () => {
+  if (!svg.value) return;
   const svgEl = d3.select(svg.value);
   svgEl.selectAll("*").remove();
 
   const parseDate = d3.timeParse("%Y-%m-%d");
   const formatDate = d3.timeFormat("%Y-%m-%d");
 
-  let data = props.data.map((d) => ({
-    date: parseDate(d.date),
-    value: d.value,
-  }));
+  let parsedData: ProcessedDataPoint[] = [];
+  for (const d of props.data) {
+    const parsed = parseDate(d.date);
+    if (parsed) {
+      parsedData.push({ date: parsed, value: d.value });
+    }
+  }
 
-  data.sort((a, b) => a.date - b.date);
+  parsedData.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  const firstDate = d3.min(data, (d) => d.date);
-  const lastDate = d3.max(data, (d) => d.date);
+  if (parsedData.length === 0) return;
+
+  const firstDate = d3.min(parsedData, (d) => d.date) as Date;
+  const lastDate = d3.max(parsedData, (d) => d.date) as Date;
 
   const startOfWeek = d3.timeSunday.floor(firstDate);
   const endOfWeek = d3.timeSunday.ceil(lastDate);
 
   const allDays = d3.timeDays(startOfWeek, endOfWeek);
 
-  const dataMap = new Map(data.map((d) => [formatDate(d.date), d.value]));
+  const dataMap = new Map<string, number>(
+    parsedData.map((d) => [formatDate(d.date), d.value]),
+  );
 
-  data = allDays.map((date) => ({
+  const completeData: ProcessedDataPoint[] = allDays.map((date) => ({
     date,
     value: dataMap.get(formatDate(date)) ?? 0,
   }));
 
   // Compute week index + weekday index
-  data.forEach((d) => {
+  completeData.forEach((d) => {
     d.week = d3.timeSunday.count(startOfWeek, d.date);
     d.day = d.date.getDay(); // 0 = Sunday
   });
 
-  const weeks = d3.max(data, (d) => d.week) + 1;
+  const weeks = (d3.max(completeData, (d) => d.week!) ?? 0) + 1;
   const width = weeks * props.cellSize;
   const height = 7 * props.cellSize;
 
-  const margin = { top: 25, right: 20, bottom: 10, left: 40 };
+  const margin = { top: 25, right: 0, bottom: 10, left: 25 };
 
   svgEl
     .attr("width", width + margin.left + margin.right)
@@ -69,16 +106,17 @@ const drawChart = () => {
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
   // ---- Color scale (GitHub style) ----
+  const maxVal = d3.max(completeData, (d) => d.value) ?? 1;
   const color = d3
-    .scaleQuantize()
-    .domain([0, d3.max(data, (d) => d.value)])
+    .scaleQuantize<string>()
+    .domain([0, maxVal])
     .range(["#ebedf0", "#c6e48b", "#7bc96f", "#239a3b", "#196127"]);
 
   g.selectAll("rect")
-    .data(data)
+    .data(completeData)
     .join("rect")
-    .attr("x", (d) => d.week * props.cellSize)
-    .attr("y", (d) => d.day * props.cellSize)
+    .attr("x", (d) => (d.week ?? 0) * props.cellSize)
+    .attr("y", (d) => (d.day ?? 0) * props.cellSize)
     .attr("width", props.cellSize - 2)
     .attr("height", props.cellSize - 2)
     .attr("fill", (d) => color(d.value))
@@ -115,5 +153,5 @@ const drawChart = () => {
 };
 
 onMounted(drawChart);
-watch(() => props.data, drawChart);
+watch(() => props.data, drawChart, { deep: true });
 </script>
