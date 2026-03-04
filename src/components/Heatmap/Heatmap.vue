@@ -47,7 +47,7 @@ const drawChart = () => {
   // Build X, Y scales and axis:
   const x = d3
     .scaleBand<string>()
-    .domain([...new Set(props.data.map((d) => d.date))])
+    .domain([...new Set(props.data.map((d: DataPoint) => d.date))] as string[])
     .range([0, width])
     .padding(0.01);
 
@@ -67,20 +67,20 @@ const drawChart = () => {
   g.append("g").call(yAxis);
 
   // Build color scale
-  const maxVal = d3.max(props.data, (d) => d.value) ?? 1;
+  const maxVal: number =
+    d3.max<DataPoint, number>(props.data, (d) => d.value) ?? 1;
   const color = d3
-    .scaleLinear<string>()
-    .domain([0, maxVal])
-    .range(["white", "#69b3a2"]);
+    .scaleSequential(d3.interpolateRgb("white", "#69b3a2"))
+    .domain([0, maxVal]);
 
-  g.selectAll("rect")
+  g.selectAll<SVGRectElement, DataPoint>("rect")
     .data(props.data)
     .join("rect")
-    .attr("x", (d) => x(d.date) ?? 0)
-    .attr("y", (d) => y(d.weekday) ?? 0)
+    .attr("x", (d: DataPoint) => x(d.date) ?? 0)
+    .attr("y", (d: DataPoint) => y(d.weekday) ?? 0)
     .attr("width", x.bandwidth())
     .attr("height", y.bandwidth())
-    .attr("fill", (d) => color(d.value));
+    .attr("fill", (d: DataPoint) => color(d.value));
 };
 
 onMounted(drawChart);

@@ -1,13 +1,13 @@
 <template>
-  <div class="container">
-    <div class="svg-container">
+  <div class="calendar-heatmap-container">
+    <div class="calendar-heatmap-svg-container">
       <svg ref="svg"></svg>
     </div>
   </div>
 </template>
 
-<style scoped>
-.container {
+<style>
+.calendar-heatmap-container {
   width: max-content;
   max-width: 100%;
   border: 1px solid #ccc;
@@ -16,7 +16,7 @@
   padding-bottom: 5px;
   box-sizing: border-box;
 }
-.svg-container {
+.calendar-heatmap-svg-container {
   overflow-x: auto;
   width: 100%;
 }
@@ -44,10 +44,36 @@ interface ProcessedDataPoint {
 interface Props {
   data: RawDataPoint[];
   cellSize?: number;
+  cellHorizontalPadding?: number;
+  cellVerticalPadding?: number;
+  colorScale?: string[];
+  textColor?: string;
+  backgroundColor?: string;
+  fontSize?: string;
+  fontStyle?: string;
+  marginTop?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+  marginRight?: number;
+  hoverColor?: string;
+  tooltipFormat?: (d: RawDataPoint) => string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   cellSize: 15,
+  cellHorizontalPadding: 2,
+  cellVerticalPadding: 2,
+  colorScale: () => ["#ebedf0", "#c6e48b", "#7bc96f", "#239a3b", "#196127"],
+  textColor: "inherit",
+  backgroundColor: "transparent",
+  fontSize: "12px",
+  fontStyle: "inherit",
+  marginTop: 25,
+  marginBottom: 10,
+  marginLeft: 30,
+  marginRight: 0,
+  hoverColor: "#333",
+  tooltipFormat: (d: RawDataPoint) => `${d.date} — ${d.value}`,
 });
 
 const svg = ref<SVGSVGElement | null>(null);
@@ -56,6 +82,8 @@ const drawChart = () => {
   if (!svg.value) return;
   const svgEl = d3.select(svg.value);
   svgEl.selectAll("*").remove();
+
+  svgEl.style("background-color", props.backgroundColor);
 
   const parseDate = d3.timeParse("%Y-%m-%d");
   const formatDate = d3.timeFormat("%Y-%m-%d");
@@ -99,33 +127,51 @@ const drawChart = () => {
   const width = weeks * props.cellSize;
   const height = 7 * props.cellSize;
 
-  const margin = { top: 25, right: 0, bottom: 10, left: 25 };
-
   svgEl
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom);
+    .attr("width", width + props.marginLeft + props.marginRight)
+    .attr("height", height + props.marginTop + props.marginBottom);
 
   const g = svgEl
     .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
+    .attr("transform", `translate(${props.marginLeft},${props.marginTop})`);
 
-  // ---- Color scale (GitHub style) ----
+  // ---- Color scale (GitHub style or custom) ----
   const maxVal = d3.max(completeData, (d) => d.value) ?? 1;
   const color = d3
     .scaleQuantize<string>()
     .domain([0, maxVal])
-    .range(["#ebedf0", "#c6e48b", "#7bc96f", "#239a3b", "#196127"]);
+    .range(props.colorScale);
 
   g.selectAll("rect")
     .data(completeData)
     .join("rect")
-    .attr("x", (d) => (d.week ?? 0) * props.cellSize)
-    .attr("y", (d) => (d.day ?? 0) * props.cellSize)
-    .attr("width", props.cellSize - 2)
-    .attr("height", props.cellSize - 2)
+    .attr(
+      "x",
+      (d) => (d.week ?? 0) * props.cellSize + props.cellHorizontalPadding / 2,
+    )
+    .attr(
+      "y",
+      (d) => (d.day ?? 0) * props.cellSize + props.cellVerticalPadding / 2,
+    )
+    .attr("width", props.cellSize - props.cellHorizontalPadding)
+    .attr("height", props.cellSize - props.cellVerticalPadding)
     .attr("fill", (d) => color(d.value))
+    .on("mouseover", function () {
+      if (props.hoverColor) {
+        d3.select(this)
+          .attr("stroke", props.hoverColor)
+          .attr("stroke-width", 1);
+      }
+    })
+    .on("mouseout", function () {
+      if (props.hoverColor) {
+        d3.select(this).attr("stroke", null).attr("stroke-width", null);
+      }
+    })
     .append("title")
-    .text((d) => `${formatDate(d.date)} — ${d.value}`);
+    .text((d) =>
+      props.tooltipFormat({ date: formatDate(d.date), value: d.value }),
+    );
 
   // ---- Weekday labels ----
   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -137,7 +183,9 @@ const drawChart = () => {
     .attr("x", -5)
     .attr("y", (_, i) => i * props.cellSize + props.cellSize * 0.7)
     .attr("text-anchor", "end")
-    .attr("font-size", "10px")
+    .attr("font-size", props.fontSize)
+    .attr("font-style", props.fontStyle)
+    .attr("fill", props.textColor)
     .text((d) => d);
 
   // ---- Month labels ----
@@ -152,10 +200,32 @@ const drawChart = () => {
       return week * props.cellSize;
     })
     .attr("y", -5)
-    .attr("font-size", "10px")
+    .attr("font-size", props.fontSize)
+    .attr("font-style", props.fontStyle)
+    .attr("fill", props.textColor)
     .text(d3.timeFormat("%b"));
 };
 
 onMounted(drawChart);
-watch(() => props.data, drawChart, { deep: true });
+watch(
+  () => [
+    props.data,
+    props.cellSize,
+    props.cellHorizontalPadding,
+    props.cellVerticalPadding,
+    props.colorScale,
+    props.textColor,
+    props.backgroundColor,
+    props.fontSize,
+    props.fontStyle,
+    props.marginTop,
+    props.marginBottom,
+    props.marginLeft,
+    props.marginRight,
+    props.hoverColor,
+    props.tooltipFormat,
+  ],
+  drawChart,
+  { deep: true },
+);
 </script>

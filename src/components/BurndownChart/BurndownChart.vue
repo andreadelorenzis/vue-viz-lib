@@ -1,9 +1,17 @@
 <template>
-  <svg ref="svg"></svg>
+  <div ref="burndownContainer" class="burndown-container">
+    <svg ref="burndownSvg"></svg>
+  </div>
 </template>
 
+<style>
+.burndown-container {
+  width: 100%;
+}
+</style>
+
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch, nextTick } from "vue";
 import * as d3 from "d3";
 
 interface DataPoint {
@@ -14,28 +22,59 @@ interface DataPoint {
 interface Props {
   data: DataPoint[];
   idealData?: DataPoint[] | null;
-  width?: number;
-  height?: number;
+  lineColor?: string;
+  idealLineColor?: string;
+  lineStrokeWidth?: number;
+  idealLineStrokeWidth?: number;
+  lineStyle?: string;
+  idealLineStyle?: string;
+  gridColor?: string;
+  backgroundColor?: string;
+  textColor?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   idealData: null,
-  width: 400,
-  height: 200,
+  lineColor: "#2563eb",
+  idealLineColor: "#f87171",
+  lineStrokeWidth: 3,
+  idealLineStrokeWidth: 2,
+  lineStyle: "solid",
+  idealLineStyle: "dashed",
+  gridColor: "#e5e7eb",
+  backgroundColor: "transparent",
+  textColor: "currentColor",
 });
 
-const svg = ref<SVGSVGElement | null>(null);
+const burndownSvg = ref<SVGSVGElement | null>(null);
+const burndownContainer = ref<HTMLDivElement | null>(null);
+
+const ASPECT_RATIO = 0.5; // 2:1 ratio
+
+const getDashArray = (style: string) => {
+  if (style === "dashed") return "5,5";
+  if (style === "dotted") return "2,2";
+  if (style === "solid") return null;
+  return style;
+};
 
 const drawChart = () => {
-  if (!svg.value) return;
-  const svgEl = d3.select(svg.value);
+  if (!burndownSvg.value || !burndownContainer.value) return;
+
+  const width = burndownContainer.value.clientWidth;
+  const height = width * ASPECT_RATIO;
+
+  const svgEl = d3.select(burndownSvg.value);
   svgEl.selectAll("*").remove();
 
-  svgEl.attr("width", props.width).attr("height", props.height);
+  svgEl
+    .attr("width", width)
+    .attr("height", height)
+    .style("background-color", props.backgroundColor);
 
-  const margin = { top: 30, right: 30, bottom: 40, left: 50 };
-  const width = props.width - margin.left - margin.right;
-  const height = props.height - margin.top - margin.bottom;
+  const margin = { top: 15, right: 0, bottom: 20, left: 22 };
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
 
   const g = svgEl
     .append("g")
@@ -44,47 +83,57 @@ const drawChart = () => {
   const x = d3
     .scaleBand<string>()
     .domain(props.data.map((d) => d.day))
-    .range([0, width])
+    .range([0, innerWidth])
     .padding(0.2);
 
+  const maxValue: number =
+    d3.max<DataPoint, number>(props.data, (d) => d.value) ?? 0;
   const y = d3
     .scaleLinear<number>()
-    .domain([0, d3.max(props.data, (d) => d.value) ?? 0])
+    .domain([0, maxValue])
     .nice()
-    .range([height, 0]);
+    .range([innerHeight, 0]);
 
   // Grid and axes
-  g.append("g")
+  const grid = g
+    .append("g")
     .attr("class", "grid")
     .call(
       d3
         .axisLeft(y)
         .ticks(4)
-        .tickSize(-width)
+        .tickSize(-innerWidth)
         .tickFormat(() => ""),
-    )
-    .selectAll("line")
-    .attr("stroke", "#e5e7eb");
+    );
 
-  g.append("g").call(d3.axisLeft(y).ticks(4));
+  grid.selectAll("line").attr("stroke", props.gridColor);
+  grid.select(".domain").remove();
 
-  g.append("g")
-    .attr("transform", `translate(0,${height})`)
+  const yAxis = g.append("g").call(d3.axisLeft(y).ticks(4));
+  yAxis.selectAll("text").attr("fill", props.textColor);
+  yAxis.selectAll("path, line").attr("stroke", props.textColor);
+
+  const xAxis = g
+    .append("g")
+    .attr("transform", `translate(0,${innerHeight})`)
     .call(d3.axisBottom(x));
+  xAxis.selectAll("text").attr("fill", props.textColor);
+  xAxis.selectAll("path, line").attr("stroke", props.textColor);
 
   const line = d3
     .line<DataPoint>()
-    .x((d) => (x(d.day) ?? 0) + x.bandwidth() / 2)
-    .y((d) => y(d.value));
+    .x((d: DataPoint) => (x(d.day) ?? 0) + x.bandwidth() / 2)
+    .y((d: DataPoint) => y(d.value));
 
   // Actual burndown
   g.append("path")
     .datum(props.data)
     .attr("fill", "none")
-    .attr("stroke", "#2563eb")
-    .attr("stroke-width", 3)
+    .attr("stroke", props.lineColor)
+    .attr("stroke-width", props.lineStrokeWidth)
     .attr("stroke-linecap", "round")
     .attr("stroke-linejoin", "round")
+    .attr("stroke-dasharray", getDashArray(props.lineStyle))
     .attr("d", line);
 
   // Ideal burndown
@@ -103,12 +152,36 @@ const drawChart = () => {
   g.append("path")
     .datum(ideal)
     .attr("fill", "none")
-    .attr("stroke", "#f87171")
-    .attr("stroke-width", 2)
-    .attr("stroke-dasharray", "5,5")
+    .attr("stroke", props.idealLineColor)
+    .attr("stroke-width", props.idealLineStrokeWidth)
+    .attr("stroke-dasharray", getDashArray(props.idealLineStyle))
     .attr("d", line);
 };
 
-onMounted(drawChart);
-watch(() => [props.data, props.idealData], drawChart, { deep: true });
+onMounted(() => {
+  drawChart();
+  // Watch for container resize
+  if (burndownContainer.value) {
+    const ro = new ResizeObserver(() => drawChart());
+    ro.observe(burndownContainer.value);
+  }
+});
+
+watch(
+  () => [
+    props.data,
+    props.idealData,
+    props.lineColor,
+    props.idealLineColor,
+    props.lineStrokeWidth,
+    props.idealLineStrokeWidth,
+    props.lineStyle,
+    props.idealLineStyle,
+    props.gridColor,
+    props.backgroundColor,
+    props.textColor,
+  ],
+  drawChart,
+  { deep: true },
+);
 </script>

@@ -50,15 +50,16 @@ const drawChart = () => {
     .range([0, props.width])
     .padding(0.1);
 
+  const maxValue = d3.max<number>(props.data) ?? 0;
   const y = d3
-    .scaleLinear<number>()
-    .domain([0, d3.max(props.data) ?? 0])
+    .scaleLinear<number, number>()
+    .domain([0, maxValue])
     .nice()
     .range([props.height, 0]);
 
   svgEl
-    .selectAll("rect")
-    .data(props.data)
+    .selectAll<SVGRectElement, number>("rect")
+    .data<number>(props.data)
     .join("rect")
     .attr("x", (_, i) => x(i) ?? 0)
     .attr("y", (d) => y(d))

@@ -48,7 +48,7 @@ const drawChart = () => {
 
   const y = d3
     .scaleLinear<number>()
-    .domain([0, d3.max(props.data, (d) => d.value) ?? 0])
+    .domain([0, d3.max<DataPoint, number>(props.data, (d) => d.value) ?? 0])
     .nice()
     .range([height, 0]);
 

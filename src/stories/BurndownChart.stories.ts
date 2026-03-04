@@ -10,10 +10,19 @@ export default {
     idealData: { control: "object" },
     width: { control: "number" },
     height: { control: "number" },
+    lineColor: { control: "color" },
+    idealLineColor: { control: "color" },
+    lineStrokeWidth: { control: "number" },
+    idealLineStrokeWidth: { control: "number" },
+    lineStyle: { control: "text" },
+    idealLineStyle: { control: "text" },
+    gridColor: { control: "color" },
+    backgroundColor: { control: "color" },
+    textColor: { control: "color" },
   },
 } as Meta<typeof BurndownChart>;
 
-const Template: StoryFn<typeof BurndownChart> = (args) => ({
+const Template: StoryFn<typeof BurndownChart> = (args: any) => ({
   components: { BurndownChart },
   setup() {
     return { args };
@@ -29,12 +38,19 @@ Default.args = {
     { day: "Day 3", value: 70 },
     { day: "Day 4", value: 65 },
     { day: "Day 5", value: 40 },
-    { day: "Day 6", value: 20 },
+    { day: "Day 6", value: 0 },
   ],
   idealData: [
     { day: "Day 1", value: 100 },
     { day: "Day 6", value: 0 },
   ],
-  width: 600,
-  height: 400,
+  lineColor: "#2563eb",
+  idealLineColor: "#f87171",
+  lineStrokeWidth: 3,
+  idealLineStrokeWidth: 2,
+  lineStyle: "solid",
+  idealLineStyle: "dashed",
+  gridColor: "#e5e7eb",
+  backgroundColor: "transparent",
+  textColor: "currentColor",
 };
