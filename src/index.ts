@@ -3,5 +3,13 @@ import BurndownChart from "./components/BurndownChart/BurndownChart.vue";
 import CalendarHeatmap from "./components/CalendarHeatmap/CalendarHeatmap.vue";
 import Heatmap from "./components/Heatmap/Heatmap.vue";
 import LineChart from "./components/LineChart/LineChart.vue";
+import FrappeGantt from "./components/FrappeGantt/FrappeGantt.vue";
 
-export { BarChart, BurndownChart, CalendarHeatmap, Heatmap, LineChart };
+export {
+  BarChart,
+  BurndownChart,
+  CalendarHeatmap,
+  Heatmap,
+  LineChart,
+  FrappeGantt,
+};

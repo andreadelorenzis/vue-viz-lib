@@ -1,5 +1,5 @@
 <template>
-  <div class="calendar-heatmap-container">
+  <div class="calendar-heatmap-container" :style="{ border: props.border }">
     <div class="calendar-heatmap-svg-container">
       <svg ref="svg"></svg>
     </div>
@@ -10,7 +10,6 @@
 .calendar-heatmap-container {
   width: max-content;
   max-width: 100%;
-  border: 1px solid #ccc;
   border-radius: 10px;
   padding: 0 10px;
   padding-bottom: 5px;
@@ -43,6 +42,7 @@ interface ProcessedDataPoint {
 
 interface Props {
   data: RawDataPoint[];
+  year: number;
   cellSize?: number;
   cellHorizontalPadding?: number;
   cellVerticalPadding?: number;
@@ -56,6 +56,7 @@ interface Props {
   marginLeft?: number;
   marginRight?: number;
   hoverColor?: string;
+  border?: string;
   tooltipFormat?: (d: RawDataPoint) => string;
 }
 
@@ -73,6 +74,7 @@ const props = withDefaults(defineProps<Props>(), {
   marginLeft: 30,
   marginRight: 0,
   hoverColor: "#333",
+  border: "1px solid #ccc",
   tooltipFormat: (d: RawDataPoint) => `${d.date} — ${d.value}`,
 });
 
@@ -98,13 +100,13 @@ const drawChart = () => {
 
   parsedData.sort((a, b) => a.date.getTime() - b.date.getTime());
 
-  if (parsedData.length === 0) return;
+  // if (parsedData.length === 0) return;
 
-  const firstDate = d3.min(parsedData, (d) => d.date) as Date;
-  const lastDate = d3.max(parsedData, (d) => d.date) as Date;
+  const yearStart = new Date(props.year, 0, 1);
+  const yearEnd = new Date(props.year + 1, 0, 1);
 
-  const startOfWeek = d3.timeSunday.floor(firstDate);
-  const endOfWeek = d3.timeSunday.ceil(lastDate);
+  const startOfWeek = d3.timeSunday.floor(yearStart);
+  const endOfWeek = d3.timeSunday.ceil(yearEnd);
 
   const allDays = d3.timeDays(startOfWeek, endOfWeek);
 
@@ -136,7 +138,7 @@ const drawChart = () => {
     .attr("transform", `translate(${props.marginLeft},${props.marginTop})`);
 
   // ---- Color scale (GitHub style or custom) ----
-  const maxVal = d3.max(completeData, (d) => d.value) ?? 1;
+  const maxVal = Math.max(1, d3.max(completeData, (d) => d.value) ?? 0);
   const color = d3
     .scaleQuantize<string>()
     .domain([0, maxVal])
@@ -189,7 +191,7 @@ const drawChart = () => {
     .text((d) => d);
 
   // ---- Month labels ----
-  const months = d3.timeMonths(d3.timeMonth.floor(startOfWeek), lastDate);
+  const months = d3.timeMonths(d3.timeMonth.floor(yearStart), yearEnd);
 
   g.selectAll(".month")
     .data(months)
@@ -223,6 +225,7 @@ watch(
     props.marginLeft,
     props.marginRight,
     props.hoverColor,
+    props.border,
     props.tooltipFormat,
   ],
   drawChart,

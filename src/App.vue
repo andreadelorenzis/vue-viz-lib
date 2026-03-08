@@ -5,6 +5,7 @@ import LineChart from "./components/LineChart/LineChart.vue";
 import BurndownChart from "./components/BurndownChart/BurndownChart.vue";
 import Heatmap from "./components/Heatmap/Heatmap.vue";
 import CalendarHeatmap from "./components/CalendarHeatmap/CalendarHeatmap.vue";
+import FrappeGantt from "./components/FrappeGantt/FrappeGantt.vue";
 
 const chartData = ref([10, 15, 20, 25, 30, 5, 7]);
 const lineChartData = ref([
@@ -13,23 +14,23 @@ const lineChartData = ref([
   { day: "03 Mar", value: 10, efficiency: 0.6 },
 ]);
 const burndownData = [
-  { day: "Day 1", value: 50 },
-  { day: "Day 2", value: 42 },
-  { day: "Day 3", value: 35 },
-  { day: "Day 4", value: 28 },
-  { day: "Day 5", value: 20 },
-  { day: "Day 6", value: 12 },
-  { day: "Day 7", value: 0 },
+  { date: "date 1", remaining: 50 },
+  { date: "date 2", remaining: 42 },
+  { date: "date 3", remaining: 35 },
+  { date: "date 4", remaining: 28 },
+  { date: "date 5", remaining: 20 },
+  { date: "date 6", remaining: 12 },
+  { date: "date 7", remaining: 0 },
 ];
 
 const idealBurndownData = [
-  { day: "Day 1", value: 50 },
-  { day: "Day 2", value: 40 },
-  { day: "Day 3", value: 30 },
-  { day: "Day 4", value: 20 },
-  { day: "Day 5", value: 10 },
-  { day: "Day 6", value: 0 },
-  { day: "Day 7", value: 0 },
+  { date: "date 1", remaining: 50 },
+  { date: "date 2", remaining: 40 },
+  { date: "date 3", remaining: 30 },
+  { date: "date 4", remaining: 20 },
+  { date: "date 5", remaining: 10 },
+  { date: "date 6", remaining: 0 },
+  { date: "date 7", remaining: 0 },
 ];
 
 const heatmapData = [
@@ -42,34 +43,53 @@ const heatmapData = [
   { date: "date 7", weekday: "Sun", value: 0 },
 ];
 
-function generateYearData() {
-  const start = new Date("2026-01-01");
-  const end = new Date("2026-12-31");
-  const dates = [];
+let tasks = [
+  {
+    id: "1",
+    name: "Redesign website",
+    start: "2016-12-28",
+    end: "2016-12-31",
+    progress: 30,
+  },
+];
 
-  let current = new Date(start);
+// const heatmapCalendarData = generateYearData();
+const heatmapCalendarData = [{ date: "2026-01-01", value: 1 }];
 
-  while (current <= end) {
-    dates.push({
-      date: current.toISOString().slice(0, 10),
-      value: Math.floor(Math.random() * 10),
-    });
-    current.setDate(current.getDate() + 1);
-  }
+const handleDateChange = (task: any, start: Date, end: Date) => {
+  console.log("Date changed for task: ", task);
+  console.log("New range:", start, end);
+};
 
-  return dates;
-}
+const handleProgressChange = (task: any, progress: number) => {
+  console.log("Progress changed for task", task);
+  console.log("new progress: ", progress);
+};
 
-const heatmapCalendarData = generateYearData();
+const handleViewChange = (mode: any) => {
+  console.log("View changed: ", mode);
+};
+
+const handleClick = (task: any) => {
+  console.log("Clicked task: ", task);
+};
 </script>
 
 <template>
   <div class="app-container">
+    <FrappeGantt
+      :tasks="tasks"
+      :options="{ view_mode: 'Day' }"
+      @taskClick="handleClick"
+      @dateChange="handleDateChange"
+      @progressChange="handleProgressChange"
+      @viewChange="handleViewChange"
+    />
     <BarChart :data="chartData" />
     <LineChart :data="lineChartData" />
     <BurndownChart :data="burndownData" :idealData="idealBurndownData" />
     <Heatmap :data="heatmapData" />
-    <CalendarHeatmap :data="heatmapCalendarData" />
+    <CalendarHeatmap :data="heatmapCalendarData" :year="2026" />
   </div>
 </template>
 

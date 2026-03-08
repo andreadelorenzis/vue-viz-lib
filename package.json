@@ -26,7 +26,9 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
+    "@types/frappe-gantt": "^0.9.0",
     "d3": "^7.9.0",
+    "frappe-gantt": "^1.2.2",
     "vue": "^3.5.25"
   },
   "devDependencies": {

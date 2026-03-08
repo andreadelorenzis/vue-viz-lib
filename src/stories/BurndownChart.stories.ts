@@ -33,16 +33,16 @@ const Template: StoryFn<typeof BurndownChart> = (args: any) => ({
 export const Default = Template.bind({});
 Default.args = {
   data: [
-    { day: "Day 1", value: 100 },
-    { day: "Day 2", value: 90 },
-    { day: "Day 3", value: 70 },
-    { day: "Day 4", value: 65 },
-    { day: "Day 5", value: 40 },
-    { day: "Day 6", value: 0 },
+    { date: "Day 1", remaining: 100 },
+    { date: "Day 2", remaining: 90 },
+    { date: "Day 3", remaining: 70 },
+    { date: "Day 4", remaining: 65 },
+    { date: "Day 5", remaining: 40 },
+    { date: "Day 6", remaining: 0 },
   ],
   idealData: [
-    { day: "Day 1", value: 100 },
-    { day: "Day 6", value: 0 },
+    { date: "Day 1", remaining: 100 },
+    { date: "Day 6", remaining: 0 },
   ],
   lineColor: "#2563eb",
   idealLineColor: "#f87171",
